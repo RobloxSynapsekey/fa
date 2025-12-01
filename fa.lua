@@ -8,6 +8,7 @@ Bionics.__index = Bionics
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
 -- Create new window
 function Bionics.new(title)
@@ -18,31 +19,38 @@ function Bionics.new(title)
     self.ScreenGui.Name = "BionicsUI"
     self.ScreenGui.ResetOnSpawn = false
     self.ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    self.ScreenGui.Parent = game:GetService("CoreGui")
     
-    -- Main Frame
+    local success = pcall(function()
+        self.ScreenGui.Parent = game:GetService("CoreGui")
+    end)
+    
+    if not success then
+        self.ScreenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+    end
+    
+    -- Main Frame (ImGui dark theme)
     self.MainFrame = Instance.new("Frame")
     self.MainFrame.Name = "MainFrame"
-    self.MainFrame.Size = UDim2.new(0, 400, 0, 450)
-    self.MainFrame.Position = UDim2.new(0.5, -200, 0.5, -225)
-    self.MainFrame.BackgroundColor3 = Color3.fromRGB(37, 37, 38)
+    self.MainFrame.Size = UDim2.new(0, 380, 0, 400)
+    self.MainFrame.Position = UDim2.new(0.5, -190, 0.5, -200)
+    self.MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     self.MainFrame.BorderSizePixel = 1
-    self.MainFrame.BorderColor3 = Color3.fromRGB(62, 62, 66)
+    self.MainFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
     self.MainFrame.Parent = self.ScreenGui
     
-    -- Title Bar
+    -- Title Bar (ImGui style)
     local titleBar = Instance.new("Frame")
     titleBar.Name = "TitleBar"
-    titleBar.Size = UDim2.new(1, 0, 0, 30)
-    titleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 48)
+    titleBar.Size = UDim2.new(1, 0, 0, 25)
+    titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     titleBar.BorderSizePixel = 0
     titleBar.Parent = self.MainFrame
     
-    -- Title Bar Border
+    -- Title Bar Bottom Border
     local titleBorder = Instance.new("Frame")
     titleBorder.Size = UDim2.new(1, 0, 0, 1)
-    titleBorder.Position = UDim2.new(0, 0, 1, 0)
-    titleBorder.BackgroundColor3 = Color3.fromRGB(62, 62, 66)
+    titleBorder.Position = UDim2.new(0, 0, 1, -1)
+    titleBorder.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     titleBorder.BorderSizePixel = 0
     titleBorder.Parent = titleBar
     
@@ -50,36 +58,36 @@ function Bionics.new(title)
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Name = "Title"
     titleLabel.Size = UDim2.new(1, -10, 1, 0)
-    titleLabel.Position = UDim2.new(0, 10, 0, 0)
+    titleLabel.Position = UDim2.new(0, 8, 0, 0)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Text = title or "Bionics"
-    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.TextSize = 14
-    titleLabel.Font = Enum.Font.SourceSans
+    titleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    titleLabel.TextSize = 13
+    titleLabel.Font = Enum.Font.Code
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.Parent = titleBar
     
     -- Container for elements
     self.Container = Instance.new("ScrollingFrame")
     self.Container.Name = "Container"
-    self.Container.Size = UDim2.new(1, -16, 1, -38)
-    self.Container.Position = UDim2.new(0, 8, 0, 34)
+    self.Container.Size = UDim2.new(1, -12, 1, -33)
+    self.Container.Position = UDim2.new(0, 6, 0, 29)
     self.Container.BackgroundTransparency = 1
     self.Container.BorderSizePixel = 0
-    self.Container.ScrollBarThickness = 6
-    self.Container.ScrollBarImageColor3 = Color3.fromRGB(158, 158, 158)
+    self.Container.ScrollBarThickness = 4
+    self.Container.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80)
     self.Container.CanvasSize = UDim2.new(0, 0, 0, 0)
     self.Container.Parent = self.MainFrame
     
     -- UIListLayout for Container
     local listLayout = Instance.new("UIListLayout")
-    listLayout.Padding = UDim.new(0, 4)
+    listLayout.Padding = UDim.new(0, 3)
     listLayout.SortOrder = Enum.SortOrder.LayoutOrder
     listLayout.Parent = self.Container
     
     -- Auto-resize canvas
     listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        self.Container.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 8)
+        self.Container.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 6)
     end)
     
     -- Make draggable
@@ -90,7 +98,20 @@ end
 
 -- Make frame draggable
 function Bionics:MakeDraggable(frame, dragBar)
-    local dragging, dragInput, dragStart, startPos
+    local dragging = false
+    local dragInput
+    local dragStart
+    local startPos
+    
+    local function update(input)
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
     
     dragBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -114,11 +135,7 @@ function Bionics:MakeDraggable(frame, dragBar)
     
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            frame.Position = UDim2.new(
-                startPos.X.Scale, startPos.X.Offset + delta.X,
-                startPos.Y.Scale, startPos.Y.Offset + delta.Y
-            )
+            update(input)
         end
     end)
 end
@@ -127,120 +144,115 @@ end
 function Bionics:Dropdown(name, options, default, callback)
     local dropdownFrame = Instance.new("Frame")
     dropdownFrame.Name = "Dropdown"
-    dropdownFrame.Size = UDim2.new(1, 0, 0, 21)
+    dropdownFrame.Size = UDim2.new(1, 0, 0, 20)
     dropdownFrame.BackgroundTransparency = 1
-    dropdownFrame.Parent = self.Container
     dropdownFrame.ClipsDescendants = false
+    dropdownFrame.Parent = self.Container
     
-    -- Dropdown Button
-    local dropBtn = Instance.new("TextButton")
-    dropBtn.Size = UDim2.new(1, 0, 0, 21)
-    dropBtn.BackgroundColor3 = Color3.fromRGB(51, 51, 55)
-    dropBtn.BorderSizePixel = 1
-    dropBtn.BorderColor3 = Color3.fromRGB(62, 62, 66)
-    dropBtn.Text = ""
-    dropBtn.AutoButtonColor = false
-    dropBtn.Parent = dropdownFrame
+    -- Main Button
+    local mainButton = Instance.new("TextButton")
+    mainButton.Size = UDim2.new(1, 0, 0, 20)
+    mainButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    mainButton.BorderSizePixel = 1
+    mainButton.BorderColor3 = Color3.fromRGB(60, 60, 60)
+    mainButton.Text = ""
+    mainButton.AutoButtonColor = false
+    mainButton.Parent = dropdownFrame
     
-    -- Label
+    -- Label Text
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -25, 1, 0)
-    label.Position = UDim2.new(0, 8, 0, 0)
+    label.Size = UDim2.new(1, -20, 1, 0)
+    label.Position = UDim2.new(0, 6, 0, 0)
     label.BackgroundTransparency = 1
-    label.Text = name .. ": " .. (default or options[1] or "")
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextSize = 14
-    label.Font = Enum.Font.SourceSans
+    label.Text = name .. ": " .. tostring(default or (options[1] or "None"))
+    label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    label.TextSize = 13
+    label.Font = Enum.Font.Code
     label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = dropBtn
+    label.Parent = mainButton
     
-    -- Arrow
+    -- Arrow Indicator
     local arrow = Instance.new("TextLabel")
-    arrow.Size = UDim2.new(0, 20, 1, 0)
-    arrow.Position = UDim2.new(1, -20, 0, 0)
+    arrow.Size = UDim2.new(0, 14, 1, 0)
+    arrow.Position = UDim2.new(1, -16, 0, 0)
     arrow.BackgroundTransparency = 1
-    arrow.Text = "▼"
-    arrow.TextColor3 = Color3.fromRGB(200, 200, 200)
-    arrow.TextSize = 10
-    arrow.Font = Enum.Font.SourceSans
-    arrow.Parent = dropBtn
+    arrow.Text = "v"
+    arrow.TextColor3 = Color3.fromRGB(150, 150, 150)
+    arrow.TextSize = 11
+    arrow.Font = Enum.Font.Code
+    arrow.Parent = mainButton
     
-    -- Options List Container
-    local listContainer = Instance.new("Frame")
-    listContainer.Name = "OptionsList"
-    listContainer.Size = UDim2.new(1, 0, 0, 0)
-    listContainer.Position = UDim2.new(0, 0, 0, 22)
-    listContainer.BackgroundColor3 = Color3.fromRGB(51, 51, 55)
-    listContainer.BorderSizePixel = 1
-    listContainer.BorderColor3 = Color3.fromRGB(62, 62, 66)
-    listContainer.Visible = false
-    listContainer.ZIndex = 100
-    listContainer.ClipsDescendants = true
-    listContainer.Parent = dropdownFrame
+    -- Options Container
+    local optionsFrame = Instance.new("Frame")
+    optionsFrame.Name = "Options"
+    optionsFrame.Size = UDim2.new(1, 0, 0, 0)
+    optionsFrame.Position = UDim2.new(0, 0, 0, 21)
+    optionsFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    optionsFrame.BorderSizePixel = 1
+    optionsFrame.BorderColor3 = Color3.fromRGB(60, 60, 60)
+    optionsFrame.Visible = false
+    optionsFrame.ZIndex = 10
+    optionsFrame.ClipsDescendants = true
+    optionsFrame.Parent = dropdownFrame
     
-    -- Scrolling Frame for options
-    local optionsScroll = Instance.new("ScrollingFrame")
-    optionsScroll.Size = UDim2.new(1, 0, 1, 0)
-    optionsScroll.BackgroundTransparency = 1
-    optionsScroll.BorderSizePixel = 0
-    optionsScroll.ScrollBarThickness = 6
-    optionsScroll.ScrollBarImageColor3 = Color3.fromRGB(158, 158, 158)
-    optionsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-    optionsScroll.Parent = listContainer
+    -- Options List
+    local optionsList = Instance.new("Frame")
+    optionsList.Size = UDim2.new(1, 0, 1, 0)
+    optionsList.BackgroundTransparency = 1
+    optionsList.Parent = optionsFrame
     
-    local optList = Instance.new("UIListLayout")
-    optList.SortOrder = Enum.SortOrder.LayoutOrder
-    optList.Parent = optionsScroll
-    
-    optList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        optionsScroll.CanvasSize = UDim2.new(0, 0, 0, optList.AbsoluteContentSize.Y)
-    end)
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    listLayout.Parent = optionsList
     
     local isOpen = false
-    local selectedValue = default or (options[1] or "")
+    local currentSelection = default or options[1]
     
-    -- Create option buttons
-    local function createOptions(optionsList)
-        -- Clear existing options
-        for _, child in pairs(optionsScroll:GetChildren()) do
+    -- Function to create option buttons
+    local function updateOptions(newOptions)
+        -- Clear old options
+        for _, child in pairs(optionsList:GetChildren()) do
             if child:IsA("TextButton") then
                 child:Destroy()
             end
         end
         
-        for i, option in ipairs(optionsList) do
-            local optBtn = Instance.new("TextButton")
-            optBtn.Size = UDim2.new(1, 0, 0, 21)
-            optBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 64)
-            optBtn.BorderSizePixel = 0
-            optBtn.Text = option
-            optBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            optBtn.TextSize = 14
-            optBtn.Font = Enum.Font.SourceSans
-            optBtn.TextXAlignment = Enum.TextXAlignment.Left
-            optBtn.AutoButtonColor = false
-            optBtn.ZIndex = 101
-            optBtn.Parent = optionsScroll
+        -- Create new options
+        for i, option in ipairs(newOptions) do
+            local optionButton = Instance.new("TextButton")
+            optionButton.Size = UDim2.new(1, 0, 0, 20)
+            optionButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            optionButton.BorderSizePixel = 0
+            optionButton.Text = tostring(option)
+            optionButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+            optionButton.TextSize = 13
+            optionButton.Font = Enum.Font.Code
+            optionButton.TextXAlignment = Enum.TextXAlignment.Left
+            optionButton.AutoButtonColor = false
+            optionButton.ZIndex = 11
+            optionButton.Parent = optionsList
             
             local padding = Instance.new("UIPadding")
-            padding.PaddingLeft = UDim.new(0, 8)
-            padding.Parent = optBtn
+            padding.PaddingLeft = UDim.new(0, 6)
+            padding.Parent = optionButton
             
-            optBtn.MouseEnter:Connect(function()
-                optBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 84)
+            -- Hover effect
+            optionButton.MouseEnter:Connect(function()
+                optionButton.BackgroundColor3 = Color3.fromRGB(60, 100, 180)
             end)
             
-            optBtn.MouseLeave:Connect(function()
-                optBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 64)
+            optionButton.MouseLeave:Connect(function()
+                optionButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
             end)
             
-            optBtn.MouseButton1Click:Connect(function()
-                selectedValue = option
-                label.Text = name .. ": " .. option
-                listContainer.Visible = false
+            -- Click handler
+            optionButton.MouseButton1Click:Connect(function()
+                currentSelection = option
+                label.Text = name .. ": " .. tostring(option)
+                optionsFrame.Visible = false
                 isOpen = false
-                arrow.Text = "▼"
-                dropdownFrame.Size = UDim2.new(1, 0, 0, 21)
+                arrow.Text = "v"
+                dropdownFrame.Size = UDim2.new(1, 0, 0, 20)
                 
                 if callback then
                     callback(option)
@@ -248,43 +260,42 @@ function Bionics:Dropdown(name, options, default, callback)
             end)
         end
         
-        local numOptions = #optionsList
-        local maxHeight = math.min(numOptions * 21, 150)
-        listContainer.Size = UDim2.new(1, 0, 0, maxHeight)
+        -- Update frame size
+        local optionCount = #newOptions
+        local maxVisible = math.min(optionCount, 6)
+        optionsFrame.Size = UDim2.new(1, 0, 0, maxVisible * 20)
     end
     
-    createOptions(options)
+    -- Initialize options
+    updateOptions(options)
     
     -- Toggle dropdown
-    dropBtn.MouseButton1Click:Connect(function()
+    mainButton.MouseButton1Click:Connect(function()
         isOpen = not isOpen
-        listContainer.Visible = isOpen
-        arrow.Text = isOpen and "▲" or "▼"
+        optionsFrame.Visible = isOpen
+        arrow.Text = isOpen and "^" or "v"
         
         if isOpen then
-            local numOptions = #optionsScroll:GetChildren() - 1
-            local maxHeight = math.min(numOptions * 21, 150)
-            dropdownFrame.Size = UDim2.new(1, 0, 0, 21 + maxHeight + 1)
+            local optionCount = #options
+            local maxVisible = math.min(optionCount, 6)
+            dropdownFrame.Size = UDim2.new(1, 0, 0, 20 + (maxVisible * 20) + 2)
         else
-            dropdownFrame.Size = UDim2.new(1, 0, 0, 21)
+            dropdownFrame.Size = UDim2.new(1, 0, 0, 20)
         end
     end)
     
-    dropBtn.MouseEnter:Connect(function()
-        dropBtn.BackgroundColor3 = Color3.fromRGB(62, 62, 66)
+    -- Hover effect
+    mainButton.MouseEnter:Connect(function()
+        mainButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     end)
     
-    dropBtn.MouseLeave:Connect(function()
-        dropBtn.BackgroundColor3 = Color3.fromRGB(51, 51, 55)
+    mainButton.MouseLeave:Connect(function()
+        mainButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     end)
     
-    -- Return object with update method
     return {
         Frame = dropdownFrame,
-        UpdateOptions = function(newOptions)
-            options = newOptions
-            createOptions(newOptions)
-        end
+        UpdateOptions = updateOptions
     }
 end
 
@@ -293,22 +304,26 @@ function Bionics:PlayerDropdown(name, callback)
     local function getPlayerList()
         local playerList = {}
         for _, player in ipairs(Players:GetPlayers()) do
-            table.insert(playerList, player.Name .. " | " .. player.DisplayName)
+            local displayText = player.Name .. " | " .. player.DisplayName
+            table.insert(playerList, displayText)
+        end
+        if #playerList == 0 then
+            table.insert(playerList, "No players")
         end
         return playerList
     end
     
-    local playerList = getPlayerList()
-    local dropdown = self:Dropdown(name, playerList, playerList[1], callback)
+    local initialList = getPlayerList()
+    local dropdown = self:Dropdown(name, initialList, initialList[1], callback)
     
-    -- Update when players join/leave
+    -- Update on player changes
     Players.PlayerAdded:Connect(function()
-        wait(0.1)
+        task.wait(0.1)
         dropdown.UpdateOptions(getPlayerList())
     end)
     
     Players.PlayerRemoving:Connect(function()
-        wait(0.1)
+        task.wait(0.1)
         dropdown.UpdateOptions(getPlayerList())
     end)
     
@@ -319,65 +334,66 @@ end
 function Bionics:Toggle(name, default, callback)
     local toggleFrame = Instance.new("Frame")
     toggleFrame.Name = "Toggle"
-    toggleFrame.Size = UDim2.new(1, 0, 0, 21)
+    toggleFrame.Size = UDim2.new(1, 0, 0, 20)
     toggleFrame.BackgroundTransparency = 1
     toggleFrame.Parent = self.Container
     
-    local toggleBtn = Instance.new("TextButton")
-    toggleBtn.Size = UDim2.new(1, 0, 1, 0)
-    toggleBtn.BackgroundColor3 = Color3.fromRGB(51, 51, 55)
-    toggleBtn.BorderSizePixel = 1
-    toggleBtn.BorderColor3 = Color3.fromRGB(62, 62, 66)
-    toggleBtn.Text = ""
-    toggleBtn.AutoButtonColor = false
-    toggleBtn.Parent = toggleFrame
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, 0, 1, 0)
+    button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    button.BorderSizePixel = 1
+    button.BorderColor3 = Color3.fromRGB(60, 60, 60)
+    button.Text = ""
+    button.AutoButtonColor = false
+    button.Parent = toggleFrame
     
-    -- Checkbox
+    -- Checkbox square
     local checkbox = Instance.new("Frame")
-    checkbox.Size = UDim2.new(0, 13, 0, 13)
-    checkbox.Position = UDim2.new(0, 8, 0.5, -6.5)
-    checkbox.BackgroundColor3 = Color3.fromRGB(60, 60, 64)
+    checkbox.Size = UDim2.new(0, 12, 0, 12)
+    checkbox.Position = UDim2.new(0, 6, 0.5, -6)
+    checkbox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     checkbox.BorderSizePixel = 1
-    checkbox.BorderColor3 = Color3.fromRGB(100, 100, 104)
-    checkbox.Parent = toggleBtn
+    checkbox.BorderColor3 = Color3.fromRGB(80, 80, 80)
+    checkbox.Parent = button
     
     -- Checkmark
     local checkmark = Instance.new("TextLabel")
     checkmark.Size = UDim2.new(1, 0, 1, 0)
+    checkmark.Position = UDim2.new(0, 0, 0, -2)
     checkmark.BackgroundTransparency = 1
     checkmark.Text = ""
-    checkmark.TextColor3 = Color3.fromRGB(255, 255, 255)
-    checkmark.TextSize = 16
-    checkmark.Font = Enum.Font.SourceSansBold
+    checkmark.TextColor3 = Color3.fromRGB(100, 180, 255)
+    checkmark.TextSize = 14
+    checkmark.Font = Enum.Font.Code
     checkmark.Parent = checkbox
     
     -- Label
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -35, 1, 0)
-    label.Position = UDim2.new(0, 28, 0, 0)
+    label.Size = UDim2.new(1, -26, 1, 0)
+    label.Position = UDim2.new(0, 24, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = name
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextSize = 14
-    label.Font = Enum.Font.SourceSans
+    label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    label.TextSize = 13
+    label.Font = Enum.Font.Code
     label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = toggleBtn
+    label.Parent = button
     
     local toggled = default or false
     
     local function updateToggle()
         if toggled then
-            checkmark.Text = "✓"
-            checkbox.BackgroundColor3 = Color3.fromRGB(75, 110, 175)
+            checkmark.Text = "X"
+            checkbox.BackgroundColor3 = Color3.fromRGB(60, 100, 180)
         else
             checkmark.Text = ""
-            checkbox.BackgroundColor3 = Color3.fromRGB(60, 60, 64)
+            checkbox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
         end
     end
     
     updateToggle()
     
-    toggleBtn.MouseButton1Click:Connect(function()
+    button.MouseButton1Click:Connect(function()
         toggled = not toggled
         updateToggle()
         if callback then
@@ -385,12 +401,12 @@ function Bionics:Toggle(name, default, callback)
         end
     end)
     
-    toggleBtn.MouseEnter:Connect(function()
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(62, 62, 66)
+    button.MouseEnter:Connect(function()
+        button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     end)
     
-    toggleBtn.MouseLeave:Connect(function()
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(51, 51, 55)
+    button.MouseLeave:Connect(function()
+        button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     end)
     
     return toggleFrame
@@ -400,74 +416,74 @@ end
 function Bionics:Keybind(name, default, callback)
     local keybindFrame = Instance.new("Frame")
     keybindFrame.Name = "Keybind"
-    keybindFrame.Size = UDim2.new(1, 0, 0, 21)
+    keybindFrame.Size = UDim2.new(1, 0, 0, 20)
     keybindFrame.BackgroundTransparency = 1
     keybindFrame.Parent = self.Container
     
     local container = Instance.new("Frame")
     container.Size = UDim2.new(1, 0, 1, 0)
-    container.BackgroundColor3 = Color3.fromRGB(51, 51, 55)
+    container.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     container.BorderSizePixel = 1
-    container.BorderColor3 = Color3.fromRGB(62, 62, 66)
+    container.BorderColor3 = Color3.fromRGB(60, 60, 60)
     container.Parent = keybindFrame
     
     -- Label
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.6, -8, 1, 0)
-    label.Position = UDim2.new(0, 8, 0, 0)
+    label.Size = UDim2.new(0.65, 0, 1, 0)
+    label.Position = UDim2.new(0, 6, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = name
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextSize = 14
-    label.Font = Enum.Font.SourceSans
+    label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    label.TextSize = 13
+    label.Font = Enum.Font.Code
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = container
     
     -- Key Button
-    local keyBtn = Instance.new("TextButton")
-    keyBtn.Size = UDim2.new(0.4, -16, 0, 17)
-    keyBtn.Position = UDim2.new(0.6, 8, 0.5, -8.5)
-    keyBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 64)
-    keyBtn.BorderSizePixel = 1
-    keyBtn.BorderColor3 = Color3.fromRGB(100, 100, 104)
-    keyBtn.Text = default or "None"
-    keyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    keyBtn.TextSize = 13
-    keyBtn.Font = Enum.Font.SourceSans
-    keyBtn.AutoButtonColor = false
-    keyBtn.Parent = container
+    local keyButton = Instance.new("TextButton")
+    keyButton.Size = UDim2.new(0.32, 0, 0, 16)
+    keyButton.Position = UDim2.new(0.66, 0, 0.5, -8)
+    keyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    keyButton.BorderSizePixel = 1
+    keyButton.BorderColor3 = Color3.fromRGB(70, 70, 70)
+    keyButton.Text = default or "None"
+    keyButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+    keyButton.TextSize = 12
+    keyButton.Font = Enum.Font.Code
+    keyButton.AutoButtonColor = false
+    keyButton.Parent = container
     
     local listening = false
     local currentKey = default
     
-    keyBtn.MouseButton1Click:Connect(function()
+    keyButton.MouseButton1Click:Connect(function()
         if not listening then
             listening = true
-            keyBtn.Text = "..."
-            keyBtn.BackgroundColor3 = Color3.fromRGB(75, 110, 175)
+            keyButton.Text = "..."
+            keyButton.BackgroundColor3 = Color3.fromRGB(60, 100, 180)
         end
     end)
     
-    keyBtn.MouseEnter:Connect(function()
+    keyButton.MouseEnter:Connect(function()
         if not listening then
-            keyBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 74)
+            keyButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
         end
     end)
     
-    keyBtn.MouseLeave:Connect(function()
+    keyButton.MouseLeave:Connect(function()
         if not listening then
-            keyBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 64)
+            keyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
         end
     end)
     
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if listening and not gameProcessed then
+        if listening then
             if input.UserInputType == Enum.UserInputType.Keyboard then
                 local key = input.KeyCode.Name
                 currentKey = key
-                keyBtn.Text = key
+                keyButton.Text = key
                 listening = false
-                keyBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 64)
+                keyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
                 
                 if callback then
                     callback(key)
