@@ -1,5 +1,5 @@
--- Bionics UI Library
--- A clean, dark, glass-themed UI library for Roblox
+-- Bionics UI Library (ImGui Style)
+-- Clean, functional UI library for Roblox
 
 local Bionics = {}
 Bionics.__index = Bionics
@@ -7,6 +7,7 @@ Bionics.__index = Bionics
 -- Services
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
 
 -- Create new window
 function Bionics.new(title)
@@ -22,72 +23,63 @@ function Bionics.new(title)
     -- Main Frame
     self.MainFrame = Instance.new("Frame")
     self.MainFrame.Name = "MainFrame"
-    self.MainFrame.Size = UDim2.new(0, 450, 0, 500)
-    self.MainFrame.Position = UDim2.new(0.5, -225, 0.5, -250)
-    self.MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-    self.MainFrame.BackgroundTransparency = 0.3
-    self.MainFrame.BorderSizePixel = 0
+    self.MainFrame.Size = UDim2.new(0, 400, 0, 450)
+    self.MainFrame.Position = UDim2.new(0.5, -200, 0.5, -225)
+    self.MainFrame.BackgroundColor3 = Color3.fromRGB(37, 37, 38)
+    self.MainFrame.BorderSizePixel = 1
+    self.MainFrame.BorderColor3 = Color3.fromRGB(62, 62, 66)
     self.MainFrame.Parent = self.ScreenGui
-    
-    -- Main Frame Corner
-    local mainCorner = Instance.new("UICorner")
-    mainCorner.CornerRadius = UDim.new(0, 16)
-    mainCorner.Parent = self.MainFrame
-    
-    -- Glass Effect (Stroke)
-    local mainStroke = Instance.new("UIStroke")
-    mainStroke.Color = Color3.fromRGB(60, 60, 80)
-    mainStroke.Thickness = 1
-    mainStroke.Transparency = 0.5
-    mainStroke.Parent = self.MainFrame
     
     -- Title Bar
     local titleBar = Instance.new("Frame")
     titleBar.Name = "TitleBar"
-    titleBar.Size = UDim2.new(1, 0, 0, 50)
-    titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-    titleBar.BackgroundTransparency = 0.4
+    titleBar.Size = UDim2.new(1, 0, 0, 30)
+    titleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 48)
     titleBar.BorderSizePixel = 0
     titleBar.Parent = self.MainFrame
     
-    local titleCorner = Instance.new("UICorner")
-    titleCorner.CornerRadius = UDim.new(0, 16)
-    titleCorner.Parent = titleBar
+    -- Title Bar Border
+    local titleBorder = Instance.new("Frame")
+    titleBorder.Size = UDim2.new(1, 0, 0, 1)
+    titleBorder.Position = UDim2.new(0, 0, 1, 0)
+    titleBorder.BackgroundColor3 = Color3.fromRGB(62, 62, 66)
+    titleBorder.BorderSizePixel = 0
+    titleBorder.Parent = titleBar
     
     -- Title Text
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Name = "Title"
-    titleLabel.Size = UDim2.new(1, -20, 1, 0)
-    titleLabel.Position = UDim2.new(0, 20, 0, 0)
+    titleLabel.Size = UDim2.new(1, -10, 1, 0)
+    titleLabel.Position = UDim2.new(0, 10, 0, 0)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Text = title or "Bionics"
     titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.TextSize = 18
-    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextSize = 14
+    titleLabel.Font = Enum.Font.SourceSans
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.Parent = titleBar
     
     -- Container for elements
     self.Container = Instance.new("ScrollingFrame")
     self.Container.Name = "Container"
-    self.Container.Size = UDim2.new(1, -30, 1, -80)
-    self.Container.Position = UDim2.new(0, 15, 0, 65)
+    self.Container.Size = UDim2.new(1, -16, 1, -38)
+    self.Container.Position = UDim2.new(0, 8, 0, 34)
     self.Container.BackgroundTransparency = 1
     self.Container.BorderSizePixel = 0
-    self.Container.ScrollBarThickness = 4
-    self.Container.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 120)
+    self.Container.ScrollBarThickness = 6
+    self.Container.ScrollBarImageColor3 = Color3.fromRGB(158, 158, 158)
     self.Container.CanvasSize = UDim2.new(0, 0, 0, 0)
     self.Container.Parent = self.MainFrame
     
     -- UIListLayout for Container
     local listLayout = Instance.new("UIListLayout")
-    listLayout.Padding = UDim.new(0, 10)
+    listLayout.Padding = UDim.new(0, 4)
     listLayout.SortOrder = Enum.SortOrder.LayoutOrder
     listLayout.Parent = self.Container
     
     -- Auto-resize canvas
     listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        self.Container.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 10)
+        self.Container.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 8)
     end)
     
     -- Make draggable
@@ -135,230 +127,255 @@ end
 function Bionics:Dropdown(name, options, default, callback)
     local dropdownFrame = Instance.new("Frame")
     dropdownFrame.Name = "Dropdown"
-    dropdownFrame.Size = UDim2.new(1, 0, 0, 40)
-    dropdownFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    dropdownFrame.BackgroundTransparency = 0.3
-    dropdownFrame.BorderSizePixel = 0
+    dropdownFrame.Size = UDim2.new(1, 0, 0, 21)
+    dropdownFrame.BackgroundTransparency = 1
     dropdownFrame.Parent = self.Container
+    dropdownFrame.ClipsDescendants = false
     
-    local dropCorner = Instance.new("UICorner")
-    dropCorner.CornerRadius = UDim.new(0, 10)
-    dropCorner.Parent = dropdownFrame
+    -- Dropdown Button
+    local dropBtn = Instance.new("TextButton")
+    dropBtn.Size = UDim2.new(1, 0, 0, 21)
+    dropBtn.BackgroundColor3 = Color3.fromRGB(51, 51, 55)
+    dropBtn.BorderSizePixel = 1
+    dropBtn.BorderColor3 = Color3.fromRGB(62, 62, 66)
+    dropBtn.Text = ""
+    dropBtn.AutoButtonColor = false
+    dropBtn.Parent = dropdownFrame
     
-    local dropStroke = Instance.new("UIStroke")
-    dropStroke.Color = Color3.fromRGB(50, 50, 70)
-    dropStroke.Thickness = 1
-    dropStroke.Transparency = 0.6
-    dropStroke.Parent = dropdownFrame
-    
-    -- Dropdown Label
+    -- Label
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.5, -10, 1, 0)
-    label.Position = UDim2.new(0, 15, 0, 0)
+    label.Size = UDim2.new(1, -25, 1, 0)
+    label.Position = UDim2.new(0, 8, 0, 0)
     label.BackgroundTransparency = 1
-    label.Text = name
-    label.TextColor3 = Color3.fromRGB(220, 220, 220)
+    label.Text = name .. ": " .. (default or options[1] or "")
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
     label.TextSize = 14
-    label.Font = Enum.Font.Gotham
+    label.Font = Enum.Font.SourceSans
     label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = dropdownFrame
+    label.Parent = dropBtn
     
-    -- Selected Option Button
-    local selectedBtn = Instance.new("TextButton")
-    selectedBtn.Size = UDim2.new(0.45, 0, 0, 30)
-    selectedBtn.Position = UDim2.new(0.53, 0, 0.5, -15)
-    selectedBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-    selectedBtn.BackgroundTransparency = 0.2
-    selectedBtn.Text = default or options[1]
-    selectedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    selectedBtn.TextSize = 13
-    selectedBtn.Font = Enum.Font.Gotham
-    selectedBtn.BorderSizePixel = 0
-    selectedBtn.Parent = dropdownFrame
+    -- Arrow
+    local arrow = Instance.new("TextLabel")
+    arrow.Size = UDim2.new(0, 20, 1, 0)
+    arrow.Position = UDim2.new(1, -20, 0, 0)
+    arrow.BackgroundTransparency = 1
+    arrow.Text = "▼"
+    arrow.TextColor3 = Color3.fromRGB(200, 200, 200)
+    arrow.TextSize = 10
+    arrow.Font = Enum.Font.SourceSans
+    arrow.Parent = dropBtn
     
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 8)
-    btnCorner.Parent = selectedBtn
+    -- Options List Container
+    local listContainer = Instance.new("Frame")
+    listContainer.Name = "OptionsList"
+    listContainer.Size = UDim2.new(1, 0, 0, 0)
+    listContainer.Position = UDim2.new(0, 0, 0, 22)
+    listContainer.BackgroundColor3 = Color3.fromRGB(51, 51, 55)
+    listContainer.BorderSizePixel = 1
+    listContainer.BorderColor3 = Color3.fromRGB(62, 62, 66)
+    listContainer.Visible = false
+    listContainer.ZIndex = 100
+    listContainer.ClipsDescendants = true
+    listContainer.Parent = dropdownFrame
     
-    -- Dropdown Icon
-    local icon = Instance.new("TextLabel")
-    icon.Size = UDim2.new(0, 20, 1, 0)
-    icon.Position = UDim2.new(1, -25, 0, 0)
-    icon.BackgroundTransparency = 1
-    icon.Text = "▼"
-    icon.TextColor3 = Color3.fromRGB(180, 180, 180)
-    icon.TextSize = 10
-    icon.Font = Enum.Font.Gotham
-    icon.Parent = selectedBtn
-    
-    -- Options Container
-    local optionsContainer = Instance.new("Frame")
-    optionsContainer.Name = "Options"
-    optionsContainer.Size = UDim2.new(0.45, 0, 0, #options * 35)
-    optionsContainer.Position = UDim2.new(0.53, 0, 1, 5)
-    optionsContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
-    optionsContainer.BackgroundTransparency = 0.1
-    optionsContainer.BorderSizePixel = 0
-    optionsContainer.Visible = false
-    optionsContainer.ZIndex = 10
-    optionsContainer.Parent = dropdownFrame
-    
-    local optCorner = Instance.new("UICorner")
-    optCorner.CornerRadius = UDim.new(0, 8)
-    optCorner.Parent = optionsContainer
-    
-    local optStroke = Instance.new("UIStroke")
-    optStroke.Color = Color3.fromRGB(60, 60, 90)
-    optStroke.Thickness = 1
-    optStroke.Transparency = 0.5
-    optStroke.Parent = optionsContainer
+    -- Scrolling Frame for options
+    local optionsScroll = Instance.new("ScrollingFrame")
+    optionsScroll.Size = UDim2.new(1, 0, 1, 0)
+    optionsScroll.BackgroundTransparency = 1
+    optionsScroll.BorderSizePixel = 0
+    optionsScroll.ScrollBarThickness = 6
+    optionsScroll.ScrollBarImageColor3 = Color3.fromRGB(158, 158, 158)
+    optionsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    optionsScroll.Parent = listContainer
     
     local optList = Instance.new("UIListLayout")
-    optList.Padding = UDim.new(0, 2)
-    optList.Parent = optionsContainer
+    optList.SortOrder = Enum.SortOrder.LayoutOrder
+    optList.Parent = optionsScroll
     
-    -- Create option buttons
-    for i, option in ipairs(options) do
-        local optBtn = Instance.new("TextButton")
-        optBtn.Size = UDim2.new(1, -6, 0, 33)
-        optBtn.Position = UDim2.new(0, 3, 0, 0)
-        optBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-        optBtn.BackgroundTransparency = 0.5
-        optBtn.Text = option
-        optBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-        optBtn.TextSize = 12
-        optBtn.Font = Enum.Font.Gotham
-        optBtn.BorderSizePixel = 0
-        optBtn.ZIndex = 11
-        optBtn.Parent = optionsContainer
-        
-        local optBtnCorner = Instance.new("UICorner")
-        optBtnCorner.CornerRadius = UDim.new(0, 6)
-        optBtnCorner.Parent = optBtn
-        
-        optBtn.MouseButton1Click:Connect(function()
-            selectedBtn.Text = option
-            optionsContainer.Visible = false
-            icon.Text = "▼"
-            if callback then
-                callback(option)
-            end
-        end)
-        
-        optBtn.MouseEnter:Connect(function()
-            TweenService:Create(optBtn, TweenInfo.new(0.2), {BackgroundTransparency = 0.2}):Play()
-        end)
-        
-        optBtn.MouseLeave:Connect(function()
-            TweenService:Create(optBtn, TweenInfo.new(0.2), {BackgroundTransparency = 0.5}):Play()
-        end)
-    end
-    
-    -- Toggle dropdown
-    selectedBtn.MouseButton1Click:Connect(function()
-        optionsContainer.Visible = not optionsContainer.Visible
-        icon.Text = optionsContainer.Visible and "▲" or "▼"
-        dropdownFrame.Size = optionsContainer.Visible and 
-            UDim2.new(1, 0, 0, 40 + #options * 35 + 5) or 
-            UDim2.new(1, 0, 0, 40)
+    optList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        optionsScroll.CanvasSize = UDim2.new(0, 0, 0, optList.AbsoluteContentSize.Y)
     end)
     
-    return dropdownFrame
+    local isOpen = false
+    local selectedValue = default or (options[1] or "")
+    
+    -- Create option buttons
+    local function createOptions(optionsList)
+        -- Clear existing options
+        for _, child in pairs(optionsScroll:GetChildren()) do
+            if child:IsA("TextButton") then
+                child:Destroy()
+            end
+        end
+        
+        for i, option in ipairs(optionsList) do
+            local optBtn = Instance.new("TextButton")
+            optBtn.Size = UDim2.new(1, 0, 0, 21)
+            optBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 64)
+            optBtn.BorderSizePixel = 0
+            optBtn.Text = option
+            optBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            optBtn.TextSize = 14
+            optBtn.Font = Enum.Font.SourceSans
+            optBtn.TextXAlignment = Enum.TextXAlignment.Left
+            optBtn.AutoButtonColor = false
+            optBtn.ZIndex = 101
+            optBtn.Parent = optionsScroll
+            
+            local padding = Instance.new("UIPadding")
+            padding.PaddingLeft = UDim.new(0, 8)
+            padding.Parent = optBtn
+            
+            optBtn.MouseEnter:Connect(function()
+                optBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 84)
+            end)
+            
+            optBtn.MouseLeave:Connect(function()
+                optBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 64)
+            end)
+            
+            optBtn.MouseButton1Click:Connect(function()
+                selectedValue = option
+                label.Text = name .. ": " .. option
+                listContainer.Visible = false
+                isOpen = false
+                arrow.Text = "▼"
+                dropdownFrame.Size = UDim2.new(1, 0, 0, 21)
+                
+                if callback then
+                    callback(option)
+                end
+            end)
+        end
+        
+        local numOptions = #optionsList
+        local maxHeight = math.min(numOptions * 21, 150)
+        listContainer.Size = UDim2.new(1, 0, 0, maxHeight)
+    end
+    
+    createOptions(options)
+    
+    -- Toggle dropdown
+    dropBtn.MouseButton1Click:Connect(function()
+        isOpen = not isOpen
+        listContainer.Visible = isOpen
+        arrow.Text = isOpen and "▲" or "▼"
+        
+        if isOpen then
+            local numOptions = #optionsScroll:GetChildren() - 1
+            local maxHeight = math.min(numOptions * 21, 150)
+            dropdownFrame.Size = UDim2.new(1, 0, 0, 21 + maxHeight + 1)
+        else
+            dropdownFrame.Size = UDim2.new(1, 0, 0, 21)
+        end
+    end)
+    
+    dropBtn.MouseEnter:Connect(function()
+        dropBtn.BackgroundColor3 = Color3.fromRGB(62, 62, 66)
+    end)
+    
+    dropBtn.MouseLeave:Connect(function()
+        dropBtn.BackgroundColor3 = Color3.fromRGB(51, 51, 55)
+    end)
+    
+    -- Return object with update method
+    return {
+        Frame = dropdownFrame,
+        UpdateOptions = function(newOptions)
+            options = newOptions
+            createOptions(newOptions)
+        end
+    }
+end
+
+-- Create Player Dropdown
+function Bionics:PlayerDropdown(name, callback)
+    local function getPlayerList()
+        local playerList = {}
+        for _, player in ipairs(Players:GetPlayers()) do
+            table.insert(playerList, player.Name .. " | " .. player.DisplayName)
+        end
+        return playerList
+    end
+    
+    local playerList = getPlayerList()
+    local dropdown = self:Dropdown(name, playerList, playerList[1], callback)
+    
+    -- Update when players join/leave
+    Players.PlayerAdded:Connect(function()
+        wait(0.1)
+        dropdown.UpdateOptions(getPlayerList())
+    end)
+    
+    Players.PlayerRemoving:Connect(function()
+        wait(0.1)
+        dropdown.UpdateOptions(getPlayerList())
+    end)
+    
+    return dropdown
 end
 
 -- Create Toggle
 function Bionics:Toggle(name, default, callback)
     local toggleFrame = Instance.new("Frame")
     toggleFrame.Name = "Toggle"
-    toggleFrame.Size = UDim2.new(1, 0, 0, 40)
-    toggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    toggleFrame.BackgroundTransparency = 0.3
-    toggleFrame.BorderSizePixel = 0
+    toggleFrame.Size = UDim2.new(1, 0, 0, 21)
+    toggleFrame.BackgroundTransparency = 1
     toggleFrame.Parent = self.Container
     
-    local togCorner = Instance.new("UICorner")
-    togCorner.CornerRadius = UDim.new(0, 10)
-    togCorner.Parent = toggleFrame
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Size = UDim2.new(1, 0, 1, 0)
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(51, 51, 55)
+    toggleBtn.BorderSizePixel = 1
+    toggleBtn.BorderColor3 = Color3.fromRGB(62, 62, 66)
+    toggleBtn.Text = ""
+    toggleBtn.AutoButtonColor = false
+    toggleBtn.Parent = toggleFrame
     
-    local togStroke = Instance.new("UIStroke")
-    togStroke.Color = Color3.fromRGB(50, 50, 70)
-    togStroke.Thickness = 1
-    togStroke.Transparency = 0.6
-    togStroke.Parent = toggleFrame
+    -- Checkbox
+    local checkbox = Instance.new("Frame")
+    checkbox.Size = UDim2.new(0, 13, 0, 13)
+    checkbox.Position = UDim2.new(0, 8, 0.5, -6.5)
+    checkbox.BackgroundColor3 = Color3.fromRGB(60, 60, 64)
+    checkbox.BorderSizePixel = 1
+    checkbox.BorderColor3 = Color3.fromRGB(100, 100, 104)
+    checkbox.Parent = toggleBtn
     
-    -- Toggle Label
+    -- Checkmark
+    local checkmark = Instance.new("TextLabel")
+    checkmark.Size = UDim2.new(1, 0, 1, 0)
+    checkmark.BackgroundTransparency = 1
+    checkmark.Text = ""
+    checkmark.TextColor3 = Color3.fromRGB(255, 255, 255)
+    checkmark.TextSize = 16
+    checkmark.Font = Enum.Font.SourceSansBold
+    checkmark.Parent = checkbox
+    
+    -- Label
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.7, -10, 1, 0)
-    label.Position = UDim2.new(0, 15, 0, 0)
+    label.Size = UDim2.new(1, -35, 1, 0)
+    label.Position = UDim2.new(0, 28, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = name
-    label.TextColor3 = Color3.fromRGB(220, 220, 220)
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
     label.TextSize = 14
-    label.Font = Enum.Font.Gotham
+    label.Font = Enum.Font.SourceSans
     label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = toggleFrame
-    
-    -- Toggle Switch Background
-    local switchBg = Instance.new("Frame")
-    switchBg.Size = UDim2.new(0, 46, 0, 24)
-    switchBg.Position = UDim2.new(1, -60, 0.5, -12)
-    switchBg.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-    switchBg.BorderSizePixel = 0
-    switchBg.Parent = toggleFrame
-    
-    local switchCorner = Instance.new("UICorner")
-    switchCorner.CornerRadius = UDim.new(1, 0)
-    switchCorner.Parent = switchBg
-    
-    local switchStroke = Instance.new("UIStroke")
-    switchStroke.Color = Color3.fromRGB(60, 60, 80)
-    switchStroke.Thickness = 1
-    switchStroke.Transparency = 0.5
-    switchStroke.Parent = switchBg
-    
-    -- Toggle Switch Circle
-    local switchCircle = Instance.new("Frame")
-    switchCircle.Size = UDim2.new(0, 18, 0, 18)
-    switchCircle.Position = UDim2.new(0, 3, 0.5, -9)
-    switchCircle.BackgroundColor3 = Color3.fromRGB(180, 180, 200)
-    switchCircle.BorderSizePixel = 0
-    switchCircle.Parent = switchBg
-    
-    local circleCorner = Instance.new("UICorner")
-    circleCorner.CornerRadius = UDim.new(1, 0)
-    circleCorner.Parent = switchCircle
+    label.Parent = toggleBtn
     
     local toggled = default or false
     
-    -- Update toggle appearance
     local function updateToggle()
         if toggled then
-            TweenService:Create(switchCircle, TweenInfo.new(0.3), {
-                Position = UDim2.new(1, -21, 0.5, -9),
-                BackgroundColor3 = Color3.fromRGB(120, 180, 255)
-            }):Play()
-            TweenService:Create(switchBg, TweenInfo.new(0.3), {
-                BackgroundColor3 = Color3.fromRGB(60, 100, 180)
-            }):Play()
+            checkmark.Text = "✓"
+            checkbox.BackgroundColor3 = Color3.fromRGB(75, 110, 175)
         else
-            TweenService:Create(switchCircle, TweenInfo.new(0.3), {
-                Position = UDim2.new(0, 3, 0.5, -9),
-                BackgroundColor3 = Color3.fromRGB(180, 180, 200)
-            }):Play()
-            TweenService:Create(switchBg, TweenInfo.new(0.3), {
-                BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-            }):Play()
+            checkmark.Text = ""
+            checkbox.BackgroundColor3 = Color3.fromRGB(60, 60, 64)
         end
     end
     
     updateToggle()
-    
-    -- Toggle Button
-    local toggleBtn = Instance.new("TextButton")
-    toggleBtn.Size = UDim2.new(1, 0, 1, 0)
-    toggleBtn.BackgroundTransparency = 1
-    toggleBtn.Text = ""
-    toggleBtn.Parent = toggleFrame
     
     toggleBtn.MouseButton1Click:Connect(function()
         toggled = not toggled
@@ -368,6 +385,14 @@ function Bionics:Toggle(name, default, callback)
         end
     end)
     
+    toggleBtn.MouseEnter:Connect(function()
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(62, 62, 66)
+    end)
+    
+    toggleBtn.MouseLeave:Connect(function()
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(51, 51, 55)
+    end)
+    
     return toggleFrame
 end
 
@@ -375,50 +400,42 @@ end
 function Bionics:Keybind(name, default, callback)
     local keybindFrame = Instance.new("Frame")
     keybindFrame.Name = "Keybind"
-    keybindFrame.Size = UDim2.new(1, 0, 0, 40)
-    keybindFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    keybindFrame.BackgroundTransparency = 0.3
-    keybindFrame.BorderSizePixel = 0
+    keybindFrame.Size = UDim2.new(1, 0, 0, 21)
+    keybindFrame.BackgroundTransparency = 1
     keybindFrame.Parent = self.Container
     
-    local keyCorner = Instance.new("UICorner")
-    keyCorner.CornerRadius = UDim.new(0, 10)
-    keyCorner.Parent = keybindFrame
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(1, 0, 1, 0)
+    container.BackgroundColor3 = Color3.fromRGB(51, 51, 55)
+    container.BorderSizePixel = 1
+    container.BorderColor3 = Color3.fromRGB(62, 62, 66)
+    container.Parent = keybindFrame
     
-    local keyStroke = Instance.new("UIStroke")
-    keyStroke.Color = Color3.fromRGB(50, 50, 70)
-    keyStroke.Thickness = 1
-    keyStroke.Transparency = 0.6
-    keyStroke.Parent = keybindFrame
-    
-    -- Keybind Label
+    -- Label
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.5, -10, 1, 0)
-    label.Position = UDim2.new(0, 15, 0, 0)
+    label.Size = UDim2.new(0.6, -8, 1, 0)
+    label.Position = UDim2.new(0, 8, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = name
-    label.TextColor3 = Color3.fromRGB(220, 220, 220)
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
     label.TextSize = 14
-    label.Font = Enum.Font.Gotham
+    label.Font = Enum.Font.SourceSans
     label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = keybindFrame
+    label.Parent = container
     
-    -- Keybind Button
+    -- Key Button
     local keyBtn = Instance.new("TextButton")
-    keyBtn.Size = UDim2.new(0, 80, 0, 30)
-    keyBtn.Position = UDim2.new(1, -95, 0.5, -15)
-    keyBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-    keyBtn.BackgroundTransparency = 0.2
-    keyBtn.Text = default or "..."
+    keyBtn.Size = UDim2.new(0.4, -16, 0, 17)
+    keyBtn.Position = UDim2.new(0.6, 8, 0.5, -8.5)
+    keyBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 64)
+    keyBtn.BorderSizePixel = 1
+    keyBtn.BorderColor3 = Color3.fromRGB(100, 100, 104)
+    keyBtn.Text = default or "None"
     keyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     keyBtn.TextSize = 13
-    keyBtn.Font = Enum.Font.GothamBold
-    keyBtn.BorderSizePixel = 0
-    keyBtn.Parent = keybindFrame
-    
-    local keyBtnCorner = Instance.new("UICorner")
-    keyBtnCorner.CornerRadius = UDim.new(0, 8)
-    keyBtnCorner.Parent = keyBtn
+    keyBtn.Font = Enum.Font.SourceSans
+    keyBtn.AutoButtonColor = false
+    keyBtn.Parent = container
     
     local listening = false
     local currentKey = default
@@ -427,9 +444,19 @@ function Bionics:Keybind(name, default, callback)
         if not listening then
             listening = true
             keyBtn.Text = "..."
-            TweenService:Create(keyBtn, TweenInfo.new(0.2), {
-                BackgroundColor3 = Color3.fromRGB(80, 120, 200)
-            }):Play()
+            keyBtn.BackgroundColor3 = Color3.fromRGB(75, 110, 175)
+        end
+    end)
+    
+    keyBtn.MouseEnter:Connect(function()
+        if not listening then
+            keyBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 74)
+        end
+    end)
+    
+    keyBtn.MouseLeave:Connect(function()
+        if not listening then
+            keyBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 64)
         end
     end)
     
@@ -440,9 +467,7 @@ function Bionics:Keybind(name, default, callback)
                 currentKey = key
                 keyBtn.Text = key
                 listening = false
-                TweenService:Create(keyBtn, TweenInfo.new(0.2), {
-                    BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-                }):Play()
+                keyBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 64)
                 
                 if callback then
                     callback(key)
